@@ -2,13 +2,18 @@
 
 const {MongoClient} = require("mongodb");
 
+const state = {
+    db:null
+}
+
 module.exports.connectToDb = async () => {
   try { 
 
     const conn = await new MongoClient('mongodb://localhost:27017');
-    const db = conn.db('shopping');
-    console.log("Connected to mongodb");
-    return {conn, db};
+
+    state.db = conn.db('shopping');
+    console.log("Connected to mongodb");    
+   
 
   } catch (error) {
 
@@ -17,3 +22,7 @@ module.exports.connectToDb = async () => {
 
   }
 };
+
+module.exports.get = () => {
+    return state.db;
+}
