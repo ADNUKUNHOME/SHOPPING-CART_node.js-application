@@ -1,32 +1,72 @@
 var express = require('express');
 var router = express.Router();
+var productHelpers = require('../helpers/product-helpers');
+var userHelpers = require('../helpers/user-helpers');
+const { response } = require('../app');
+var toLoggin = (req, res, next) => {
+  if (req.session.loggedIn) {
+    next();
+  }else {
+    res.redirect('/login');
+  }
+}
+
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
 
-  let products = [
-    {
-      name:"Wooden Guitar",
-      description:"This is a beautyfull wooden guitar.",
-      image:"https://media.ipassio.com/media/ckeditor_image/2022/12/05/guitar.jpg"
-    },
-    {
-      name:"Golden Guitar",
-      description:"This is a beautyfull wooden guitar.",
-      image:"https://media.istockphoto.com/id/1399610550/photo/rock-electric-guitar-in-rich-golden-color.jpg?s=612x612&w=0&k=20&c=VPHeNn7990-VlecQazswSb6iiDW4tSYYu7SE5HO619c="
-    },
-    {
-      name:"Red Guitar",
-      description:"This is a beautyfull wooden guitar.",
-      image:"https://www.shutterstock.com/image-photo/red-electric-guitar-isolated-on-260nw-2300954933.jpg"
-    },
-    {
-      name:"Black Guitar",
-      description:"This is a beautyfull wooden guitar.",
-      image:"https://wallpapers.com/images/featured/guitar-vtvn8855v2zafbtj.jpg"
-    }
-  ]
-  res.render('index', { products });
+  let user = req.session.user
+
+  productHelpers.getAllProducts().then((products) => {
+
+    res.render('user/view-products' ,{ products, user })
+
+  });
+
 });
+
+router.get('/login', (req, res) => {
+
+  if (req.session.loggedIn) {
+    res.redirect('/')
+  }else{
+      res.render('user/login', {'loggErr': req.session.loggErr});
+      req.session.loggErr = false;
+  }
+});
+
+router.get('/signup', (req, res) => {
+  res.render('user/signup')
+});
+
+router.post('/signup', (req,res) => {
+
+  userHelpers.doSignup(req.body).then((response) => {
+  console.log(response);
+  })
+});
+
+router.post('/login', (req, res) => {
+  userHelpers.doLogin(req.body).then((response) => {
+  
+    if (response.status) {
+      req.session.loggedIn = true;
+      req.session.user = response.user;
+      res.redirect('/');
+    }else {
+      req.session.loggErr = "Invalid username or password."
+      res.redirect('/login');
+    }
+  })
+})
+
+router.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/')
+})
+
+router.get('/cart', toLoggin, (req, res) => {
+  res.render('user/cart');
+})
 
 module.exports = router;
